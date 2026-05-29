@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Hệ Thống Nhập Nhật Ký Sửa Chữa Công Trình - V5 (Bảo Mật & Di Động)</title>
+    
+    <!-- Nạp file cấu hình cục bộ (được gitignore để bảo mật trên GitHub) -->
+    <script src="config.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #1e293b;
+            --secondary-color: #10b981;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #334155;
+            --border-color: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; line-height: 1.6; padding-bottom: 60px; }
+        .container { max-width: 1200px; margin: 0 auto; position: relative; }
+        
+        header { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            background: linear-gradient(135deg, var(--primary-color), #334155); 
+            color: white; 
+            padding: 30px 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            position: relative;
+        }
+        header h1 { font-size: 24px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        header p { font-size: 14px; opacity: 0.9; }
+
+        .main-layout { display: flex; flex-direction: column; gap: 30px; }
+        @media (min-width: 992px) {
+            .main-layout { flex-direction: row; align-items: flex-start; }
+            .form-container { flex: 1; position: sticky; top: 20px; }
+            .table-container { flex: 1.8; }
+        }
+        
+        .card { background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color); }
+        .card h2 { font-size: 18px; color: var(--primary-color); margin-bottom: 20px; border-bottom: 2px solid var(--secondary-color); padding-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #475569; }
+        input[type="text"], input[type="number"], input[type="date"], input[type="time"], input[type="password"], textarea, select {
+            width: 100%; padding: 11px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; transition: all 0.2s ease; background-color: #f8fafc; color: var(--text-color);
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--secondary-color); outline: none; background-color: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+        textarea { resize: vertical; min-height: 80px; }
+        
+        .fieldset-custom { border: 1px dashed var(--border-color); padding: 15px; border-radius: 6px; margin-bottom: 15px; background-color: #fafafa; }
+        .fieldset-custom legend { font-weight: bold; font-size: 13px; color: #64748b; padding: 0 8px; }
+        
+        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 5px; font-size: 15px; font-weight: bold; transition: all 0.2s ease; width: 100%; }
+        .btn-submit { background-color: var(--secondary-color); color: white; margin-top: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.15); }
+        .btn-submit:hover { background-color: #059669; transform: translateY(-1px); }
+        .btn-submit:active { transform: translateY(0); }
+        
+        .btn-export { background-color: #3b82f6; color: white; margin-bottom: 15px; width: auto; display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px; font-size: 13px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15); }
+        .btn-export:hover { background-color: #2563eb; }
+        
+        /* Modernized Touch-friendly File Upload */
+        .file-upload-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: #e2e8f0;
+            color: #475569;
+            padding: 12px;
+            border-radius: 6px;
+            border: 2px dashed #cbd5e1;
+            cursor: pointer;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .file-upload-btn:hover {
+            background-color: #cbd5e1;
+            border-color: #94a3b8;
+        }
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid var(--border-color); padding: 12px 10px; text-align: left; vertical-align: top; }
+        th { background-color: var(--primary-color); color: white; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        tr:hover { background-color: #f1f5f9; }
+        .btn-delete { background-color: #ef4444; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; width: auto; font-weight: bold; }
+        .btn-delete:hover { background-color: #dc2626; }
+        
+        .no-data { text-align: center; color: #94a3b8; padding: 30px !important; font-style: italic; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background-color: #e2e8f0; color: #475569; margin-bottom: 3px; }
+        
+        .img-preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .preview-wrapper { position: relative; width: 75px; height: 75px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-wrapper .remove-img { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
+        
+        .table-img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; margin-right: 6px; margin-bottom: 6px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .table-img:hover { transform: scale(1.1); box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+        
+        /* Dynamic Banner for Google Drive Link */
+        .drive-link-box { background-color: #e8f4fd; border: 1px solid #aad2f6; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; gap: 10px; color: #1a73e8; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .drive-link-box a { color: #1a73e8; font-weight: bold; text-decoration: none; word-break: break-all; }
+        .drive-link-box a:hover { text-decoration: underline; }
+
+        /* Configuration Modal (Settings Drawer) */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .settings-content {
+            background: #ffffff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            position: relative;
+            animation: slideDown 0.3s ease-out;
+        }
+        .settings-content h3 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .settings-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #94a3b8;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .settings-close:hover { color: #475569; }
+        .settings-btn-save {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+        }
+        .settings-btn-save:hover { background-color: #059669; }
+        .settings-btn-close {
+            background-color: #e2e8f0;
+            color: #475569;
+            padding: 10px 15px;
+        }
+        .settings-btn-close:hover { background-color: #cbd5e1; }
+
+        /* Fullscreen Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.25);
+            border-radius: 50%;
+            border-top: 4px solid var(--secondary-color);
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+            width: 90%;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.success { background-color: #10b981; }
+        .toast.error { background-color: #ef4444; }
+        .toast.warning { background-color: #f59e0b; }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ========================================================
+           MOBILE RESPONSIVE STYLING (UNDER 768PX)
+           ======================================================== */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            header {
+                padding: 20px 10px;
+                margin-bottom: 15px;
+            }
+            header h1 {
+                font-size: 18px;
+            }
+            header p {
+                font-size: 12px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .form-group.row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            /* Prevent Safari/Chrome auto-zoom on mobile inputs */
+            input[type="text"], input[type="number"], input[type="date"], input[type="time"], input[type="password"], textarea, select {
+                font-size: 16px !important;
+                padding: 12px 10px;
+            }
+
+            /* Responsive Table transformed to Sleek Cards */
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            table {
+                border: none;
+            }
+
+            thead {
+                display: none; /* Hide header completely on mobile */
+            }
+
+            tbody tr {
+                background: #ffffff;
+                border: 1px solid var(--border-color) !important;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+                margin-bottom: 20px;
+                padding: 12px 15px;
+                position: relative;
+            }
+
+            tbody tr:hover {
+                background-color: #ffffff;
+            }
+
+            tbody tr:nth-child(even) {
+                background-color: #ffffff;
+            }
+
+            td {
+                border: none;
+                border-bottom: 1px solid #f1f5f9;
+                padding: 10px 0 10px 38% !important;
+                position: relative;
+                text-align: left;
+                min-height: 40px;
+                font-size: 13px;
+                word-break: break-word;
+            }
+
+            td:last-child {
+                border-bottom: none;
+                text-align: center;
+                padding: 12px 0 5px 0 !important;
+            }
+
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                top: 10px;
+                left: 0;
+                width: 35%;
+                font-weight: 700;
+                color: #475569;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            /* Full width cards for columns with rich textual content and images */
+            td[data-label="Diễn biến & Ảnh"],
+            td[data-label="Vật tư"],
+            td[data-label="Sự cố & ATLD"] {
+                padding-left: 0 !important;
+                margin-top: 5px;
+            }
+
+            td[data-label="Diễn biến & Ảnh"]::before,
+            td[data-label="Vật tư"]::before,
+            td[data-label="Sự cố & ATLD"]::before {
+                position: static;
+                display: block;
+                width: 100%;
+                margin-bottom: 6px;
+            }
+
+            td[data-label="Thao tác"]::before {
+                display: none; /* Hide operations label */
+            }
+
+            .btn-delete {
+                width: 100%;
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+
+            .table-img {
+                width: 65px;
+                height: 65px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Nhật Ký Sửa Chữa Công Trình - V5</h1>
+        <p>Hệ thống điện tử ghi chép và lưu trữ tự động lên Google Sheets & Google Drive</p>
+    </header>
+
+    <!-- Google Drive Destination Folder Link Banner (Công khai ở trang chính) -->
+    <div class="drive-link-box" id="driveLinkBox">
+        <span>📂</span>
+        <div id="driveLinkContent">
+            <strong>Đang kiểm tra cấu hình hệ thống...</strong>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         THANH ĐIỀU HƯỚNG TABS (📝 FORM NHẬP / 📊 DASHBOARD)
+         ======================================================== -->
+    <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+        <button id="tabFormBtn" onclick="switchTab('form')" style="flex: 1; background: var(--secondary-color); color: white; padding: 12px 15px; font-weight: bold; border-radius: 8px; border: none; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; gap: 8px;">📝 Nhập Nhật Ký & Tra Cứu</button>
+        <button id="tabDashboardBtn" onclick="switchTab('dashboard')" style="flex: 1; background: #e2e8f0; color: #475569; padding: 12px 15px; font-weight: bold; border-radius: 8px; border: none; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">📊 Bảng Điều Khiển Quản Trị</button>
+    </div>
+
+    <!-- ========================================================
+         VIEW 1: GIAO DIỆN FORM NHẬP & BẢNG TRA CỨU
+         ======================================================== -->
+    <div id="formView" style="display: block;">
+        <div class="main-layout">
+            <!-- Form Container -->
+            <div class="form-container card">
+                <h2>📝 Nhập Dữ Liệu Nhật Ký</h2>
+                <form id="diaryForm" onsubmit="return false;">
+                    <div class="form-group row">
+                        <div>
+                            <label for="stt">Số thứ tự (STT)</label>
+                            <input type="number" id="stt" value="1" min="1" readonly style="background-color: #e2e8f0; color: #64748b; cursor: not-allowed;" title="Số thứ tự được hệ thống tự động tính toán dựa trên Google Sheet">
+                        </div>
+                        <div>
+                            <label for="date">Thời gian (Ngày)</label>
+                            <input type="date" id="date">
+                        </div>
+                    </div>
+
+                    <fieldset class="fieldset-custom">
+                        <legend>Thông tin chung</legend>
+                        <div class="form-group">
+                            <label for="weather">Thời tiết</label>
+                            <select id="weather">
+                                <option value="Nắng đẹp">Nắng đẹp</option>
+                                <option value="Nắng gắt">Nắng gắt</option>
+                                <option value="Âm u">Âm u</option>
+                                <option value="Mưa nhỏ">Mưa nhỏ</option>
+                                <option value="Mưa to / Tạm dừng">Mưa to / Tạm dừng</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="labor">Nhân công (Số lượng / Đơn vị)</label>
+                            <input type="text" id="labor" placeholder="Ví dụ: 5 Thợ chính, 3 Thợ phụ">
+                        </div>
+                        <div class="form-group row">
+                            <div>
+                                <label for="startTime">Giờ bắt đầu</label>
+                                <input type="time" id="startTime" value="07:30">
+                            </div>
+                            <div>
+                                <label for="endTime">Giờ kết thúc</label>
+                                <input type="time" id="endTime" value="17:00">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="form-group">
+                        <label for="progress">Diễn biến thi công</label>
+                        <textarea id="progress" placeholder="Ghi rõ hạng mục sửa chữa, vị trí..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materials">Công tác vật tư</label>
+                        <textarea id="materials" placeholder="Vật tư nhập về hoặc sử dụng..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="color: #1e293b; font-weight: bold;">📸 Hình ảnh thi công hiện trường</label>
+                        <div class="file-upload-wrapper">
+                            <div class="file-upload-btn">
+                                <span>📸 Chụp / Chọn ảnh hiện trường (Chọn được nhiều lần)</span>
+                            </div>
+                            <input type="file" id="imageInput" accept="image/*" capture="environment" multiple onchange="processImages()">
+                        </div>
+                        <div class="img-preview-container" id="previewContainer"></div>
+                        <p style="font-size: 11px; color: #64748b; margin-top: 6px;">💡 Ảnh chụp nặng từ iPhone tự động được nén trước khi upload để tiết kiệm băng thông và chống văng ứng dụng.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="safety">Sự cố & An toàn lao động</label>
+                        <textarea id="safety" placeholder="Tình hình an toàn lao động...">An toàn lao động trong ngày được đảm bảo, không có sự cố.</textarea>
+                    </div>
+
+                    <fieldset class="fieldset-custom">
+                        <legend>Ký xác nhận (Họ tên)</legend>
+                        <div class="form-group">
+                            <label for="sigContractor">Đại diện Nhà thầu thi công</label>
+                            <input type="text" id="sigContractor" placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="form-group">
+                            <label for="sigSupervisor">Đại diện Giám sát / Chủ đầu tư</label>
+                            <input type="text" id="sigSupervisor" placeholder="Trần Văn B">
+                        </div>
+                    </fieldset>
+
+                    <button type="button" id="submitBtn" class="btn-submit" onclick="addDiaryEntry()">➕ Thêm & Lưu Nhật Ký</button>
+                </form>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <h2>📋 Dữ Liệu Nhật Ký Đã Ghi Nhận</h2>
+                    <button id="exportCsv" class="btn-export" style="display: none;" onclick="exportToCsv()">📥 Xuất file Excel (CSV)</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="diaryTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th style="width: 90px;">Thời gian</th>
+                                <th style="width: 140px;">Thông tin chung</th>
+                                <th>Diễn biến & Ảnh</th>
+                                <th>Vật tư</th>
+                                <th>Sự cố & ATLD</th>
+                                <th style="width: 140px;">Ký xác nhận</th>
+                                <th style="width: 60px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="8" class="no-data">Chưa có dữ liệu nhật ký nào được nhập.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+         VIEW 2: GIAO DIỆN BẢNG ĐIỀU KHỂN QUẢN TRỊ (ADMIN DASHBOARD)
+         ======================================================== -->
+    <div id="dashboardView" style="display: none;">
+        <div class="card" style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px;">
+                <h2 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0; display: flex; align-items: center; gap: 8px;">📊 Dashboard Tiến Độ Thi Công</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="syncFromGoogleSheets()" style="background-color: #3b82f6; color: white; padding: 8px 15px; font-size: 13px; width: auto; font-weight: bold; border-radius: 5px; display: flex; align-items: center; gap: 6px;" title="Tải toàn bộ dữ liệu lịch sử từ Google Sheet">🔄 Đồng Bộ Từ Sheets</button>
+                </div>
+            </div>
+            
+            <!-- KPI Chỉ Số Hàng Trên -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <!-- KPI 1 -->
+                <div class="card" style="padding: 20px; background: linear-gradient(135deg, #1e293b, #334155); color: white; text-align: center; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 26px; margin-bottom: 5px;">📅</div>
+                    <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tổng Ngày Thi Công</div>
+                    <div id="dashTotalDays" style="font-size: 32px; font-weight: 800; margin-top: 5px; color: var(--secondary-color);">0</div>
+                </div>
+                <!-- KPI 2 -->
+                <div class="card" style="padding: 20px; background: linear-gradient(135deg, #0f766e, #134e4a); color: white; text-align: center; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 26px; margin-bottom: 5px;">📸</div>
+                    <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Ảnh Đã Tải Lên</div>
+                    <div id="dashTotalImages" style="font-size: 32px; font-weight: 800; margin-top: 5px; color: #34d399;">0</div>
+                </div>
+                <!-- KPI 3 -->
+                <div class="card" style="padding: 20px; background: linear-gradient(135deg, #1d4ed8, #1e3a8a); color: white; text-align: center; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 26px; margin-bottom: 5px;">🌤️</div>
+                    <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Thời Tiết Chủ Đạo</div>
+                    <div id="dashWeather" style="font-size: 15px; font-weight: 700; margin-top: 10px; color: #93c5fd; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Chưa có</div>
+                </div>
+                <!-- KPI 4 -->
+                <div class="card" style="padding: 20px; background: linear-gradient(135deg, #0369a1, #0c4a6e); color: white; text-align: center; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 26px; margin-bottom: 5px;">🛡️</div>
+                    <div style="font-size: 11px; opacity: 0.85; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tình Hình An Toàn</div>
+                    <div id="dashSafety" style="font-size: 20px; font-weight: 800; margin-top: 10px; color: #38bdf8;">100% An Toàn</div>
+                </div>
+            </div>
+            
+            <!-- Hai Cột Biểu Đồ & Dòng Thời Gian Tiến Độ -->
+            <div style="display: flex; flex-direction: column; gap: 30px; margin-top: 20px;" class="analytics-layout">
+                <style>
+                    .analytics-layout { flex-direction: column; }
+                    @media (min-width: 992px) {
+                        .analytics-layout { flex-direction: row; }
+                        .analytics-left { flex: 1; }
+                        .analytics-right { flex: 1.6; }
+                    }
+                </style>
+                
+                <!-- Cột Trái: Thời tiết & Tổng hợp -->
+                <div class="analytics-left">
+                    <h3 style="font-size: 15px; color: var(--primary-color); margin-bottom: 15px; border-left: 4px solid var(--secondary-color); padding-left: 8px;">🌤️ Phân Tích Điều Kiện Thời Tiết</h3>
+                    <div id="dashWeatherBars" class="card" style="padding: 20px; background: #f8fafc; border: 1px solid var(--border-color);">
+                        <!-- Bảng phần trăm thời tiết CSS render động -->
+                    </div>
+                </div>
+                
+                <!-- Cột Phải: Dòng thời gian tiến độ thi công (Construction Timeline) -->
+                <div class="analytics-right">
+                    <h3 style="font-size: 15px; color: var(--primary-color); margin-bottom: 15px; border-left: 4px solid var(--secondary-color); padding-left: 8px;">📈 Dòng Thời Gian Tiến Độ Thi Công</h3>
+                    <div id="dashTimeline" style="max-height: 520px; overflow-y: auto; padding-right: 8px; padding-left: 5px;">
+                        <!-- Các khung thẻ timeline tiến độ render động -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<!-- ========================================================
+     OVERLAY ĐANG TẢI (LOADING OVERLAY)
+     ======================================================== -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">Đang xử lý dữ liệu...</h3>
+    <p id="loadingMsg" style="font-size: 13px; opacity: 0.85; text-align: center; padding: 0 20px;">Đang tải hình ảnh lên Google Drive và ghi vào Google Sheets</p>
+</div>
+
+<!-- ========================================================
+     TOAST CONTAINER (THÔNG BÁO)
+     ======================================================== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ========================================================
+     JAVASCRIPT LOGIC
+     ======================================================== -->
+<script>
+    let diaryData = [];
+    let currentSelectedImages = [];
+
+    // Tự động khởi tạo kết nối ngầm kéo dữ liệu khi tải trang (Tránh race condition của DOMContentLoaded)
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initializeApp();
+        });
+    } else {
+        initializeApp();
+    }
+
+    async function initializeApp() {
+        setupDefaultDate();
+        loadSettings();
+
+        // Sử dụng cấu hình cứng kết nối trực tiếp
+        let activeWebAppUrl = webAppUrl;
+        let activeSpreadsheetId = spreadsheetId;
+
+        if (typeof GLOBAL_CONFIG !== 'undefined') {
+            activeWebAppUrl = GLOBAL_CONFIG.webAppUrl || activeWebAppUrl;
+            activeSpreadsheetId = GLOBAL_CONFIG.spreadsheetId || activeSpreadsheetId;
+        }
+
+        if (activeWebAppUrl && activeSpreadsheetId) {
+            await autoSyncFromSheets();
+        }
+    }
+
+    function setupDefaultDate() {
+        try {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            let mm = today.getMonth() + 1;
+            let dd = today.getDate();
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+            document.getElementById('date').value = yyyy + '-' + mm + '-' + dd;
+        } catch(e) {
+            console.error("Lỗi thiết lập ngày mặc định:", e);
+        }
+    }
+
+    // TABS SWITCHING
+    function switchTab(tab) {
+        const formView = document.getElementById('formView');
+        const dashboardView = document.getElementById('dashboardView');
+        const tabFormBtn = document.getElementById('tabFormBtn');
+        const tabDashboardBtn = document.getElementById('tabDashboardBtn');
+
+        if (tab === 'form') {
+            formView.style.display = 'block';
+            dashboardView.style.display = 'none';
+            
+            tabFormBtn.style.backgroundColor = 'var(--secondary-color)';
+            tabFormBtn.style.color = 'white';
+            tabDashboardBtn.style.backgroundColor = '#e2e8f0';
+            tabDashboardBtn.style.color = '#475569';
+        } else if (tab === 'dashboard') {
+            formView.style.display = 'none';
+            dashboardView.style.display = 'block';
+            
+            tabFormBtn.style.backgroundColor = '#e2e8f0';
+            tabFormBtn.style.color = '#475569';
+            tabDashboardBtn.style.backgroundColor = 'var(--primary-color)';
+            tabDashboardBtn.style.color = 'white';
+            
+            renderDashboard();
+        }
+    }
+
+    // ========================================================
+    // QUẢN LÝ CẤU HÌNH (LOCAL STORAGE SETTINGS + QUERY PARAMS)
+    // ========================================================
+    // Cấu hình cứng cố định 100% cho dự án nội bộ
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbzhPUKujUVECSscrDWJPLqki1dS9OJXgWEL6i9HaYxDrNztlD3M3eZV_54F5s_rqS04/exec";
+    const spreadsheetId = "1LLc8DvFmf2J1dvBEdBUaxCmXZ6yyTBCkK3y8bA0OiOs";
+    const folderId = "1lsP3irdiMOpVhXQpe45oMy4reOY1Zcwp";
+
+    function loadSettings() {
+        // Fallback từ file config.js nếu chạy offline/localhost phát triển
+        let activeFolderId = folderId;
+        if (typeof GLOBAL_CONFIG !== 'undefined') {
+            activeFolderId = GLOBAL_CONFIG.folderId || activeFolderId;
+        }
+        updateDriveLinkBox(activeFolderId, true);
+    }
+
+    function saveSettings() {
+        const webAppUrl = document.getElementById('cfgWebAppUrl').value.trim();
+        const spreadsheetId = document.getElementById('cfgSpreadsheetId').value.trim();
+        let folderId = document.getElementById('cfgFolderId').value.trim();
+
+        if (!folderId) {
+            folderId = '1lsP3irdiMOpVhXQpe45oMy4reOY1Zcwp';
+            document.getElementById('cfgFolderId').value = folderId;
+        }
+
+        localStorage.setItem('webAppUrl', webAppUrl);
+        localStorage.setItem('spreadsheetId', spreadsheetId);
+        localStorage.setItem('folderId', folderId);
+
+        const isFullyConfigured = webAppUrl !== '' && spreadsheetId !== '';
+        updateDriveLinkBox(folderId, isFullyConfigured);
+        toggleSettings();
+
+        if (isFullyConfigured) {
+            showToast("💾 Đã lưu cấu hình kết nối Google thành công!", "success");
+            autoSyncFromSheets(); // Tự động kéo dữ liệu ngay lập tức sau khi cấu hình
+        } else {
+            showToast("⚠️ Đã lưu cấu hình, nhưng bạn cần điền đầy đủ Web App URL và Sheet ID để gửi dữ liệu.", "warning");
+        }
+    }
+
+    function updateDriveLinkBox(activeFolderId, isFullyConfigured) {
+        const box = document.getElementById('driveLinkBox');
+        const content = document.getElementById('driveLinkContent');
+
+        if (!isFullyConfigured) {
+            box.style.backgroundColor = '#fff3cd';
+            box.style.borderColor = '#ffeeba';
+            box.style.color = '#856404';
+            content.innerHTML = `
+                <div>
+                    <strong>⚠️ Hệ thống chưa được kết nối!</strong><br>
+                    Vui lòng liên hệ quản trị viên kiểm tra lại cấu hình Google Sheets & Drive.
+                </div>
+            `;
+        } else {
+            box.style.backgroundColor = '#e8f4fd';
+            box.style.borderColor = '#aad2f6';
+            box.style.color = '#1a73e8';
+            const folderUrl = `https://drive.google.com/drive/folders/${activeFolderId}?usp=sharing`;
+            content.innerHTML = `
+                <div>
+                    <strong>📂 Thư mục lưu trữ hình ảnh gốc của dự án trên Google Drive:</strong><br>
+                    <a href="${folderUrl}" target="_blank">${folderUrl}</a>
+                </div>
+            `;
+        }
+    }
+
+    function toggleSettings() {
+        const modal = document.getElementById('settingsModal');
+        if (modal.style.display === 'flex') {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = 'flex';
+        }
+    }
+
+    // ========================================================
+    // QUẢN LÝ THÔNG BÁO & LOAD (UI STATE)
+    // ========================================================
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let icon = '🔔';
+        if (type === 'success') icon = '✅';
+        if (type === 'error') icon = '❌';
+        if (type === 'warning') icon = '⚠️';
+
+        toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+        container.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 50);
+
+        // Dismiss
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 4000);
+    }
+
+    function showLoading(show, message = "Đang xử lý dữ liệu...") {
+        const overlay = document.getElementById('loadingOverlay');
+        const text = document.getElementById('loadingMsg');
+        if (show) {
+            text.innerText = message;
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function updateNextSTT() {
+        if(diaryData.length > 0) {
+            const maxStt = Math.max(...diaryData.map(d => parseInt(d.stt) || 0));
+            document.getElementById('stt').value = maxStt + 1;
+        } else {
+            document.getElementById('stt').value = 1;
+        }
+    }
+
+    function formatDate(dateString) {
+        if(!dateString) return 'Chưa chọn';
+        const parts = dateString.split('-');
+        if(parts.length === 3) {
+            return parts[2] + '/' + parts[1] + '/' + parts[0];
+        }
+        return dateString;
+    }
+
+    // ========================================================
+    // XỬ LÝ ẢNH CỘNG DỒN & NÉN ẢNH (ACCUMULATIVE UPLOAD)
+    // ========================================================
+    function processImages() {
+        const input = document.getElementById('imageInput');
+        if (!input.files || input.files.length === 0) return;
+
+        const filesToProcess = Array.from(input.files);
+        // Reset giá trị input để người dùng có thể bấm chọn lại chính xác ảnh vừa chọn nếu muốn
+        input.value = '';
+
+        showLoading(true, "Đang xử lý và tối ưu dung lượng ảnh hiện trường...");
+
+        let processedCount = 0;
+        const totalFiles = filesToProcess.length;
+
+        filesToProcess.forEach((file) => {
+            if (!file.type.startsWith('image/')) {
+                processedCount++;
+                if (processedCount === totalFiles) showLoading(false);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Giới hạn chiều rộng 800px để chống văng máy trên iPhone và tối ưu hóa băng thông truyền dữ liệu
+                    const MAX_WIDTH = 800;
+                    if (width > MAX_WIDTH) {
+                        height = Math.round((height * MAX_WIDTH) / width);
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Nén chất lượng JPEG xuống 0.7 để ảnh nhẹ hơn nhiều lần nhưng vẫn rõ nét
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    // Thêm tiếp (CỘNG DỒN) vào mảng ảnh hiện có
+                    currentSelectedImages.push(compressedBase64);
+                    
+                    processedCount++;
+                    if (processedCount === totalFiles) {
+                        renderPreviews();
+                        showLoading(false);
+                        showToast(`📸 Đã tối ưu và thêm thành công ${totalFiles} ảnh vào hàng đợi.`, "success");
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderPreviews() {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = '';
+        currentSelectedImages.forEach((base64String, idx) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'preview-wrapper';
+            wrapper.innerHTML = `
+                <img src="${base64String}">
+                <div class="remove-img" onclick="removePreviewImage(${idx})" title="Xóa ảnh này">×</div>
+            `;
+            container.appendChild(wrapper);
+        });
+    }
+
+    function removePreviewImage(index) {
+        currentSelectedImages.splice(index, 1);
+        renderPreviews();
+        showToast("🗑️ Đã loại bỏ ảnh khỏi hàng đợi.", "warning");
+    }
+
+    // ========================================================
+    // THỰC THI GỬI LÊN BACKEND GOOGLE APPS SCRIPT (SAVE/ADD)
+    // ========================================================
+    async function addDiaryEntry() {
+        try {
+            // Lấy cấu hình từ biến cố định hoặc fallback config.js cục bộ
+            let activeWebAppUrl = webAppUrl;
+            let activeSpreadsheetId = spreadsheetId;
+            let activeFolderId = folderId;
+
+            if (typeof GLOBAL_CONFIG !== 'undefined') {
+                activeWebAppUrl = GLOBAL_CONFIG.webAppUrl || activeWebAppUrl;
+                activeSpreadsheetId = GLOBAL_CONFIG.spreadsheetId || activeSpreadsheetId;
+                activeFolderId = GLOBAL_CONFIG.folderId || activeFolderId;
+            }
+
+            if (!activeWebAppUrl || !activeSpreadsheetId) {
+                showToast("⚠️ Hệ thống kết nối Google chưa được thiết lập cấu hình cứng!", "error");
+                return;
+            }
+
+            const stt = document.getElementById('stt').value || "1";
+            const rawDate = document.getElementById('date').value;
+            const date = formatDate(rawDate);
+            const weather = document.getElementById('weather').value || "Nắng đẹp";
+            const labor = document.getElementById('labor').value || "Không ghi nhận";
+            const startTime = document.getElementById('startTime').value || "07:30";
+            const endTime = document.getElementById('endTime').value || "17:00";
+            const progress = document.getElementById('progress').value || "Trống";
+            const materials = document.getElementById('materials').value || "Trống";
+            const safety = document.getElementById('safety').value || "An toàn";
+            const sigContractor = document.getElementById('sigContractor').value || "Chưa ký";
+            const sigSupervisor = document.getElementById('sigSupervisor').value || "Chưa ký";
+
+            // Chuẩn bị dữ liệu gửi lên API
+            const payload = {
+                action: "save",
+                stt: parseInt(stt) || diaryData.length + 1,
+                date: date,
+                weather: weather,
+                labor: labor,
+                workTime: startTime + ' - ' + endTime,
+                progress: progress,
+                materials: materials,
+                safety: safety,
+                sigContractor: sigContractor,
+                sigSupervisor: sigSupervisor,
+                images: [...currentSelectedImages],
+                spreadsheetId: activeSpreadsheetId,
+                folderId: activeFolderId
+            };
+
+            showLoading(true, "Đang tải dữ liệu và hình ảnh gốc lên máy chủ Google (Drive & Sheets)... Vui lòng đợi trong giây lát.");
+
+            // Gọi API gửi tới Google Apps Script dưới dạng POST request
+            const response = await fetch(activeWebAppUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Máy chủ Google trả về mã lỗi HTTP: ${response.status}`);
+            }
+
+            const result = await response.json();
+            showLoading(false);
+
+            if (result.status === 'success') {
+                showToast("🎉 Lưu nhật ký lên Google thành công!", "success");
+
+                // Thêm vào danh sách nhật ký hiển thị cục bộ với đường dẫn ảnh Google Drive thật trả về từ API
+                const entry = {
+                    stt: payload.stt,
+                    date: payload.date,
+                    weather: payload.weather,
+                    labor: payload.labor,
+                    workTime: payload.workTime,
+                    progress: payload.progress,
+                    materials: payload.materials,
+                    safety: payload.safety,
+                    sigContractor: payload.sigContractor,
+                    sigSupervisor: payload.sigSupervisor,
+                    images: result.uploadedImages || [] // Chứa mảng các đối tượng { fileName, viewUrl, directUrl }
+                };
+
+                diaryData.push(entry);
+                diaryData.sort((a, b) => a.stt - b.stt);
+
+                renderTable();
+
+                // Reset các trường nhập liệu
+                document.getElementById('progress').value = '';
+                document.getElementById('materials').value = '';
+                document.getElementById('labor').value = '';
+                document.getElementById('imageInput').value = '';
+                document.getElementById('previewContainer').innerHTML = '';
+                currentSelectedImages = [];
+                
+                updateNextSTT();
+            } else {
+                showToast(`❌ Lỗi từ Apps Script: ${result.message}`, "error");
+            }
+        } catch (error) {
+            showLoading(false);
+            console.error("Lỗi gửi dữ liệu:", error);
+            showToast(`❌ Không thể kết nối tới Google API. Chi tiết lỗi: ${error.message}. Hãy kiểm tra lại URL Web App và kết nối mạng của bạn.`, "error");
+        }
+    }
+
+    // ========================================================
+    // ĐỒNG BỘ DỮ LIỆU TỪ GOOGLE SHEETS VỀ DASHBOARD
+    // ========================================================
+    async function syncFromGoogleSheets() {
+        try {
+            let activeWebAppUrl = webAppUrl;
+            let activeSpreadsheetId = spreadsheetId;
+
+            if (typeof GLOBAL_CONFIG !== 'undefined') {
+                activeWebAppUrl = GLOBAL_CONFIG.webAppUrl || activeWebAppUrl;
+                activeSpreadsheetId = GLOBAL_CONFIG.spreadsheetId || activeSpreadsheetId;
+            }
+
+            if (!activeWebAppUrl || !activeSpreadsheetId) {
+                showToast("⚠️ Vui lòng thiết lập đầy đủ liên kết Google!", "error");
+                return;
+            }
+
+            showLoading(true, "Đang đồng bộ hóa toàn bộ lịch sử dữ liệu tiến độ từ Google Sheets...");
+
+            const payload = {
+                action: "fetch",
+                spreadsheetId: spreadsheetId
+            };
+
+            const response = await fetch(webAppUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Máy chủ Google trả về mã lỗi HTTP: ${response.status}`);
+            }
+
+            const result = await response.json();
+            showLoading(false);
+
+            if (result.status === 'success') {
+                const fetchedData = result.data || [];
+                if (fetchedData.length === 0) {
+                    showToast("ℹ️ Google Sheet hiện tại chưa có dữ liệu nào để tải về.", "warning");
+                } else {
+                    diaryData = fetchedData;
+                    
+                    // Sắp xếp tăng dần theo STT để lưu trữ và hiển thị bảng
+                    diaryData.sort((a, b) => a.stt - b.stt);
+                    
+                    renderTable();      // Render ra bảng nhập liệu tra cứu
+                    renderDashboard();  // Render ra giao diện phân tích Dashboard
+                    updateNextSTT();
+                    
+                    showToast(`🔄 Đồng bộ thành công ${fetchedData.length} ngày nhật ký từ Google Sheet!`, "success");
+                }
+            } else {
+                showToast(`❌ Lỗi đồng bộ từ Apps Script: ${result.message}`, "error");
+            }
+        } catch (error) {
+            showLoading(false);
+            console.error("Lỗi đồng bộ dữ liệu:", error);
+            showToast(`❌ Lỗi kết nối Google Sheets: ${error.message}. Hãy kiểm tra kết nối internet của bạn.`, "error");
+        }
+    }
+
+    // Hàm tự động kéo cơ sở dữ liệu khi tải trang (Chạy ngầm mượt mà, không block UI)
+    async function autoSyncFromSheets() {
+        try {
+            let activeWebAppUrl = webAppUrl;
+            let activeSpreadsheetId = spreadsheetId;
+
+            if (typeof GLOBAL_CONFIG !== 'undefined') {
+                activeWebAppUrl = GLOBAL_CONFIG.webAppUrl || activeWebAppUrl;
+                activeSpreadsheetId = GLOBAL_CONFIG.spreadsheetId || activeSpreadsheetId;
+            }
+
+            if (!activeWebAppUrl || !activeSpreadsheetId) return;
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">⏳ Đang tự động tải lịch sử dữ liệu từ Google Sheets...</td></tr>';
+
+            const payload = {
+                action: "fetch",
+                spreadsheetId: activeSpreadsheetId
+            };
+
+            const response = await fetch(activeWebAppUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error("Lỗi HTTP " + response.status);
+            }
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                diaryData = result.data || [];
+                diaryData.sort((a, b) => a.stt - b.stt);
+                
+                renderTable();      // Cập nhật bảng tra cứu công khai
+                renderDashboard();  // Cập nhật biểu đồ dashboard quản trị
+                updateNextSTT();    // Tự động tính toán STT tiếp theo chính xác
+            } else {
+                tbody.innerHTML = `<tr><td colspan="8" class="no-data">⚠️ Lỗi đồng bộ: ${result.message}</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Lỗi tự động đồng bộ:", error);
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">⚠️ Lỗi kết nối Google Sheets. Kiểm tra lại cấu hình hoặc mạng của bạn.</td></tr>';
+        }
+    }
+
+    // ========================================================
+    // RENDER BIỂU ĐỒ VÀ DÒNG THỜI GIAN DASHBOARD
+    // ========================================================
+    function renderDashboard() {
+        const totalDays = diaryData.length;
+        
+        // 1. Tính tổng số ảnh hiện trường đã upload
+        let totalImages = 0;
+        diaryData.forEach(item => {
+            if (item.images) totalImages += item.images.length;
+        });
+
+        // 2. Tính số lượng thời tiết chủ đạo
+        const weatherCounts = {
+            "Nắng đẹp": 0,
+            "Nắng gắt": 0,
+            "Âm u": 0,
+            "Mưa nhỏ": 0,
+            "Mưa to / Tạm dừng": 0
+        };
+
+        let safeDays = 0;
+
+        diaryData.forEach(item => {
+            if (weatherCounts.hasOwnProperty(item.weather)) {
+                weatherCounts[item.weather]++;
+            }
+            
+            // Nhận diện ngày thi công an toàn
+            const safetyText = (item.safety || "").toLowerCase();
+            if (safetyText.includes("an toàn") && !safetyText.includes("sự cố")) {
+                safeDays++;
+            }
+        });
+
+        // Tìm loại thời tiết phổ biến nhất
+        let dominantWeather = "Chưa có";
+        let maxCount = 0;
+        for (const [w, count] of Object.entries(weatherCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                dominantWeather = w;
+            }
+        }
+
+        // Cập nhật các KPI Cards trên Dashboard
+        document.getElementById('dashTotalDays').innerText = totalDays;
+        document.getElementById('dashTotalImages').innerText = totalImages;
+        document.getElementById('dashWeather').innerText = dominantWeather + (maxCount > 0 ? ` (${maxCount} ngày)` : '');
+        
+        const safetyPercent = totalDays > 0 ? Math.round((safeDays / totalDays) * 100) : 100;
+        document.getElementById('dashSafety').innerText = `${safetyPercent}% An Toàn`;
+
+        // 3. Render các thanh phần trăm thời tiết CSS
+        const barsContainer = document.getElementById('dashWeatherBars');
+        barsContainer.innerHTML = '';
+
+        for (const [w, count] of Object.entries(weatherCounts)) {
+            const percent = totalDays > 0 ? Math.round((count / totalDays) * 100) : 0;
+            
+            let color = '#10b981'; // Nắng đẹp - Emerald
+            if (w === "Nắng gắt") color = '#f59e0b'; // Amber
+            if (w === "Âm u") color = '#64748b'; // Slate
+            if (w === "Mưa nhỏ") color = '#3b82f6'; // Blue
+            if (w === "Mưa to / Tạm dừng") color = '#ef4444'; // Red
+
+            const barHtml = `
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; font-weight: 600;">
+                        <span>🌤️ ${w}</span>
+                        <span>${count} ngày (${percent}%)</span>
+                    </div>
+                    <div style="background-color: #e2e8f0; border-radius: 5px; height: 10px; overflow: hidden; width: 100%;">
+                        <div style="background-color: ${color}; height: 100%; width: ${percent}%; border-radius: 5px; transition: width 0.6s cubic-bezier(0.1, 1, 0.1, 1);"></div>
+                    </div>
+                </div>
+            `;
+            barsContainer.insertAdjacentHTML('beforeend', barHtml);
+        }
+
+        // 4. Render dòng thời gian tiến độ thi công (Timeline)
+        const timeline = document.getElementById('dashTimeline');
+        timeline.innerHTML = '';
+
+        if (diaryData.length === 0) {
+            timeline.innerHTML = `<div style="text-align: center; color: #94a3b8; font-style: italic; padding: 30px 10px;">Chưa có dữ liệu. Vui lòng bấm vào nút <strong>"Đồng Bộ Từ Sheets" 🔄</strong> để lấy toàn bộ lịch sử thi công của dự án từ Google.</div>`;
+            return;
+        }
+
+        // Xếp theo STT giảm dần (Ngày mới nhất / Tiến độ mới nhất hiện lên trên cùng)
+        const sortedLogs = [...diaryData].sort((a, b) => b.stt - a.stt);
+
+        sortedLogs.forEach((item) => {
+            let imgsHtml = '';
+            if (item.images && item.images.length > 0) {
+                imgsHtml = '<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;">';
+                item.images.forEach(img => {
+                    let src = '';
+                    let openUrl = '';
+                    if (typeof img === 'object') {
+                        src = img.directUrl;
+                        openUrl = img.viewUrl;
+                    } else {
+                        src = img;
+                        openUrl = img;
+                    }
+                    imgsHtml += `<img src="${src}" class="table-img" style="width: 50px; height: 50px; border-radius: 4px;" onclick="window.open('${openUrl}')" title="Bấm để xem ảnh gốc trên Google Drive">`;
+                });
+                imgsHtml += '</div>';
+            }
+
+            const timelineHtml = `
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; position: relative;">
+                    <!-- Nút chấm và đường kẻ đứng timeline -->
+                    <div style="display: flex; flex-direction: column; align-items: center; position: relative; width: 20px;">
+                        <div style="background-color: var(--secondary-color); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px var(--secondary-color); width: 12px; height: 12px; z-index: 2; margin-top: 4px;"></div>
+                        <div style="background-color: var(--border-color); width: 2px; height: 100%; position: absolute; top: 16px; bottom: -20px; left: 5px; z-index: 1;"></div>
+                    </div>
+                    
+                    <!-- Khung thông tin chi tiết tiến độ ngày -->
+                    <div class="card" style="flex: 1; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.01); background: #f8fafc; border: 1px solid #e2e8f0; margin-bottom: 2px;">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;">
+                            <span style="font-weight: bold; color: var(--primary-color); font-size: 14px;">📅 Ngày: ${item.date}</span>
+                            <span class="badge" style="background-color: var(--primary-color); color: white;">STT: ${item.stt}</span>
+                        </div>
+                        <div style="margin-bottom: 8px; font-size: 12px; color: #475569;">
+                            <strong>🌤️ Thời tiết:</strong> <span class="badge" style="margin-bottom:0;">${item.weather}</span> | 
+                            <strong>👷 Nhân công:</strong> <span>${item.labor}</span>
+                        </div>
+                        <div style="white-space: pre-line; font-size: 13px; color: #1e293b; background: #ffffff; padding: 10px; border-radius: 6px; border-left: 3px solid var(--secondary-color); box-shadow: inset 0 1px 3px rgba(0,0,0,0.01); margin-bottom: 8px; line-height: 1.5;">${item.progress}</div>
+                        
+                        ${item.materials !== "Trống" && item.materials ? `
+                            <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                                <strong>📦 Công tác vật tư:</strong> ${item.materials}
+                            </div>
+                        ` : ''}
+                        
+                        ${imgsHtml}
+                    </div>
+                </div>
+            `;
+            timeline.insertAdjacentHTML('beforeend', timelineHtml);
+        });
+    }
+
+    // ========================================================
+    // RENDER BẢNG TRA CỨU NHẬT KÝ
+    // ========================================================
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        const exportBtn = document.getElementById('exportCsv');
+        
+        if (diaryData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Chưa có dữ liệu nhật ký nào được nhập.</td></tr>';
+            exportBtn.style.display = 'none';
+            return;
+        }
+
+        exportBtn.style.display = 'inline-flex';
+        tbody.innerHTML = '';
+
+        diaryData.forEach((item, index) => {
+            const row = document.createElement('tr');
+            
+            let imgsHtml = '';
+            if (item.images && item.images.length > 0) {
+                imgsHtml = '<div style="margin-top: 8px; display: flex; flex-wrap: wrap;">';
+                item.images.forEach(img => {
+                    let src = '';
+                    let openUrl = '';
+                    
+                    if (typeof img === 'object') {
+                        src = img.directUrl;
+                        openUrl = img.viewUrl;
+                    } else {
+                        // Fallback dùng base64 cục bộ nếu chưa qua server
+                        src = img;
+                        openUrl = img;
+                    }
+                    
+                    imgsHtml += `<img src="${src}" class="table-img" onclick="window.open('${openUrl}')" title="Bấm để xem ảnh gốc trên Google Drive">`;
+                });
+                imgsHtml += '</div>';
+            }
+
+            // Ghi đầy đủ nhãn data-label để hỗ trợ chuyển đổi sang Cards trên Mobile
+            row.innerHTML = `
+                <td data-label="STT" style="text-align: center; font-weight: bold;">${item.stt}</td>
+                <td data-label="Thời gian">${item.date}</td>
+                <td data-label="Thông tin chung">
+                    <span class="badge">🌤️ ${item.weather}</span><br>
+                    <span class="badge">👷 ${item.labor}</span><br>
+                    <span class="badge">🕒 ${item.workTime}</span>
+                </td>
+                <td data-label="Diễn biến & Ảnh">
+                    <div style="white-space: pre-line;">${item.progress}</div>
+                    ${imgsHtml}
+                </td>
+                <td data-label="Vật tư" style="white-space: pre-line;">${item.materials}</td>
+                <td data-label="Sự cố & ATLD" style="white-space: pre-line;">${item.safety}</td>
+                <td data-label="Ký xác nhận">
+                    <strong>Thi công:</strong> ${item.sigContractor}<br>
+                    <strong>Giám sát:</strong> ${item.sigSupervisor}
+                </td>
+                <td data-label="Thao tác" style="text-align: center;">
+                    <button class="btn-delete" onclick="deleteEntry(${index})">Xóa</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function deleteEntry(index) {
+        if(confirm('Bạn có chắc chắn muốn xóa dòng nhật ký này ra khỏi bảng hiển thị cục bộ không? (Lưu ý: Dòng trên Google Sheet sẽ không bị xóa)')) {
+            diaryData.splice(index, 1);
+            renderTable();
+            updateNextSTT();
+            showToast("🗑️ Đã xóa dòng nhật ký khỏi bảng cục bộ.", "warning");
+            
+            // Cập nhật lại biểu đồ nếu đang đăng nhập admin
+            if (isAdminLoggedIn && document.getElementById('dashboardView').style.display === 'block') {
+                renderDashboard();
+            }
+        }
+    }
+
+    function exportToCsv() {
+        if(diaryData.length === 0) return;
+        let csvContent = "\uFEFF"; 
+        csvContent += "STT,Thời gian,Thời tiết,Nhân công,Giờ làm việc,Diễn biến thi công,Công tác vật tư,Sự cố & An toàn lao động,Ký xác nhận (Thi công),Ký xác nhận (Giám sát),Link Thư Mục Ảnh Gốc\n";
+
+        const folderId = localStorage.getItem('folderId') || '1lsP3irdiMOpVhXQpe45oMy4reOY1Zcwp';
+        const driveLink = `https://drive.google.com/drive/folders/${folderId}?usp=sharing`;
+
+        diaryData.forEach(item => {
+            const clean = (text) => `"${String(text).replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+            
+            csvContent += `${item.stt},` +
+                          `${clean(item.date)},` +
+                          `${clean(item.weather)},` +
+                          `${clean(item.labor)},` +
+                          `${clean(item.workTime)},` +
+                          `${clean(item.progress)},` +
+                          `${clean(item.materials)},` +
+                          `${clean(item.safety)},` +
+                          `${clean(item.sigContractor)},` +
+                          `${clean(item.sigSupervisor)},` +
+                          `"${driveLink}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Nhat_ky_sua_chua_cong_trinh_" + new Date().toISOString().slice(0,10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("📥 Đã xuất file báo cáo Excel (CSV) thành công!", "success");
+    }
+</script>
+
+</body>
+</html>
