@@ -1,5 +1,5 @@
 const GLOBAL_CONFIG = {
-    webAppUrl: "DAN_URL_GOOGLE_APPS_SCRIPT_CUA_BAN",
-    spreadsheetId: "DAN_SPREADSHEET_ID_CUA_BAN",
-    folderId: "DAN_FOLDER_ID_CUA_BAN"
+    webAppUrl: "https://script.google.com/macros/s/AKfycbzhPUKujUVECSscrDWJPLqki1dS9OJXgWEL6i9HaYxDrNztlD3M3eZV_54F5s_rqS04/exec",
+    spreadsheetId: "1LLc8DvFmf2J1dvBEdBUaxCmXZ6yyTBCkK3y8bA0OiOs",
+    folderId: "1lsP3irdiMOpVhXQpe45oMy4reOY1Zcwp"
 };
